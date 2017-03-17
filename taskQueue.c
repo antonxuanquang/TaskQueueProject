@@ -6,8 +6,9 @@
  */
 
 #include <stdio.h>
+#include <pthread.h>
 
 int main() {
-	printf("%s", "");
+	printf("%s", "fsafas\n");
 }
 
