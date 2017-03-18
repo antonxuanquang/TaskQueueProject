@@ -5,6 +5,8 @@
  *      Author: quang
  */
 
+#include "common.h"
+
 #ifndef LINKEDLIST_H_
 #define LINKEDLIST_H_
 

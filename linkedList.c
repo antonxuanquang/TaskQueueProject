@@ -10,17 +10,14 @@
 #include "linkedList.h"
 
 
-bool list_destroy(struct node* list) {
-	if (list == NULL) return true;
-	else {
-		struct node* current = list;
-		struct node* next;
-		do {
-			next = current->next;
-			free(current);
-		} while(next != NULL);
-		return true;
+bool list_destroy(struct node* head) {
+	struct node* current;
+	while (head != NULL) {
+		current = head;
+		head = head->next;
+		free(current);
 	}
+	return true;
 }
 
 bool list_insert(struct node **list, int val) {

@@ -12,6 +12,7 @@
 
 #include "common.h"
 #include "linkedList.h"
+#include "queue.h"
 
 #define NUM_THREADS 3
 
@@ -34,13 +35,10 @@
 // Function Prototypes
 //
 //*********************************************************
-bool queue_create();
-bool queue_destroy();
-bool queue_enqueue();
-bool queue_dequeue();
-bool queue_isEmpty();
+
 void print_task(task a_task);
 void perform_operations(struct node **head_ref, task new_task);
+void print_result(char *message, task new_task);
 
 //*********************************************************
 //
@@ -64,11 +62,20 @@ int main(int argc, char* argv[]) {
 	int num_tasks = atoi(argv[2]);
 	int index;
 	struct node *head = NULL;
+	struct Queue *queue = queue_create();
 	srand(time(NULL));
-	for (index = 0; index < num_tasks; index++) {
+	for (index = 1; index <= num_tasks; index++) {
 		task new_task = {index, rand() % NUMBER_OF_OPERATIONS, rand() % 100};
+		queue_enqueue(queue, new_task);
+	}
+
+	while (!queue_isEmpty(queue)) {
+		task new_task = queue_dequeue(queue)->operation;
 		perform_operations(&head, new_task);
 	}
+
+	list_destroy(head);
+	queue_destroy(queue);
 }
 
 void perform_operations(struct node **list, task new_task) {
@@ -76,32 +83,26 @@ void perform_operations(struct node **list, task new_task) {
 	if (operation == TASK_INSERT) {
 		bool successful = list_insert(list, new_task.data);
 		if (successful) {
-			printf("%s %d: Insert value %d in linked list \n",
-					get_task_name(new_task.operation), new_task.data, new_task.data);
+			print_result("Insert successfully", new_task);
 		} else {
-			printf("%s %d: Can't insert value %d in linked list \n",
-					get_task_name(new_task.operation), new_task.data, new_task.data);
+			print_result("Can't insert value %d in linked list \n", new_task);
 		}
 	} else if (operation == TASK_SEARCH) {
 		bool foundData = list_isMember((*list), new_task.data);
 		if (foundData) {
-			printf("%s %d: Found value %d in linked list \n",
-					get_task_name(new_task.operation), new_task.data, new_task.data);
+			print_result("Found it!", new_task);
 		} else {
-			printf("%s %d: There is no value %d in linked list \n",
-					get_task_name(new_task.operation), new_task.data, new_task.data);
+			print_result("Value not found!", new_task);
 		}
 	} else if (operation == TASK_DELETE) {
 		bool successful = list_delete(list, new_task.data);
 		if (successful) {
-			printf("%s %d: Delete value %d in linked list \n",
-					get_task_name(new_task.operation), new_task.data, new_task.data);
+			print_result("Delete successfully!", new_task);
 		} else {
-			printf("%s %d: There is no value %d in linked list to delete \n",
-					get_task_name(new_task.operation), new_task.data, new_task.data);
+			print_result("Value not found!", new_task);
 		}
 	} else if (operation == TASK_PRINT) {
-		printf("%s: ", get_task_name(new_task.operation));
+		printf("Task %d: %s: ", new_task.task_id, get_task_name(new_task.operation));
 		list_print((*list));
 	}
 }
@@ -112,7 +113,10 @@ void print_task(task a_task) {
 			"data: %d \n", a_task.task_id, get_task_name(a_task.operation), a_task.data);
 }
 
-
+void print_result(char *message, task new_task) {
+	printf("Task %d: %s %d: %s\n", new_task.task_id, get_task_name(new_task.operation),
+			new_task.data, message);
+}
 
 
 
