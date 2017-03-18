@@ -45,6 +45,9 @@ void print_result(char *message, task new_task);
 // Global variables
 //
 //*********************************************************
+struct LNode *head = NULL;
+struct Queue *queue = NULL;
+pthread_mutex_t a_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 //*********************************************************
 //
@@ -61,8 +64,7 @@ int main(int argc, char* argv[]) {
 //	int num_threads = atoi(argv[1]);
 	int num_tasks = atoi(argv[2]);
 	int index;
-	struct LNode *head = NULL;
-	struct Queue *queue = queue_create();
+	queue = queue_create();
 	srand(time(NULL));
 	for (index = 1; index <= num_tasks; index++) {
 		task new_task = {index, rand() % NUMBER_OF_OPERATIONS, rand() % 100};
