@@ -10,8 +10,8 @@
 #include "linkedList.h"
 
 
-bool list_destroy(struct node* head) {
-	struct node* current;
+bool list_destroy(struct LNode* head) {
+	struct LNode* current;
 	while (head != NULL) {
 		current = head;
 		head = head->next;
@@ -20,9 +20,9 @@ bool list_destroy(struct node* head) {
 	return true;
 }
 
-bool list_insert(struct node **list, int val) {
-	struct node *current = (*list);
-	struct node *new_node = (struct node *) malloc(sizeof(node));
+bool list_insert(struct LNode **list, int val) {
+	struct LNode *current = (*list);
+	struct LNode *new_node = (struct LNode *) malloc(sizeof(struct LNode));
 	if (new_node == NULL) return false;
 	new_node->val = val;
 	new_node->next = NULL;
@@ -37,9 +37,9 @@ bool list_insert(struct node **list, int val) {
 	return true;
 }
 
-bool list_delete(struct node **head, int val) {
-	struct node *current = (*head);
-	struct node *prev = NULL;
+bool list_delete(struct LNode **head, int val) {
+	struct LNode *current = (*head);
+	struct LNode *prev = NULL;
 	while (current != NULL) {
 		if (current->val == val) {
 			if (current == (*head)) {
@@ -56,12 +56,12 @@ bool list_delete(struct node **head, int val) {
 	return false;
 }
 
-bool list_isEmpty(struct node* list) {
+bool list_isEmpty(struct LNode* list) {
 	return (list != NULL);
 }
 
-bool list_isMember(struct node* list, int val) {
-	struct node* current = list;
+bool list_isMember(struct LNode* list, int val) {
+	struct LNode* current = list;
 	while (current != NULL) {
 		if (current->val == val) {
 			return true;
@@ -71,8 +71,8 @@ bool list_isMember(struct node* list, int val) {
 	return false;
 }
 
-void list_print(struct node *list) {
-	struct node *current = list;
+void list_print(struct LNode *list) {
+	struct LNode *current = list;
 	while (current != NULL) {
 		printf("%d->", current->val);
 		current = current->next;

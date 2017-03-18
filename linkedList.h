@@ -10,17 +10,17 @@
 #ifndef LINKEDLIST_H_
 #define LINKEDLIST_H_
 
-struct node{
+struct LNode{
 	int val;
-	struct node* next;
-} node;
+	struct LNode* next;
+};
 
-bool list_destroy(struct node* list);
-bool list_insert(struct node **list, int val);
-bool list_delete(struct node **list, int val);
-bool list_isEmpty(struct node* list);
-bool list_isMember(struct node* list, int val);
-void list_print(struct node *list);
+bool list_destroy(struct LNode* list);
+bool list_insert(struct LNode **list, int val);
+bool list_delete(struct LNode **list, int val);
+bool list_isEmpty(struct LNode* list);
+bool list_isMember(struct LNode* list, int val);
+void list_print(struct LNode *list);
 
 
 #endif /* LINKEDLIST_H_ */

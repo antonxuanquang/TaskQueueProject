@@ -37,7 +37,7 @@
 //*********************************************************
 
 void print_task(task a_task);
-void perform_operations(struct node **head_ref, task new_task);
+void perform_operations(struct LNode **head_ref, task new_task);
 void print_result(char *message, task new_task);
 
 //*********************************************************
@@ -61,7 +61,7 @@ int main(int argc, char* argv[]) {
 //	int num_threads = atoi(argv[1]);
 	int num_tasks = atoi(argv[2]);
 	int index;
-	struct node *head = NULL;
+	struct LNode *head = NULL;
 	struct Queue *queue = queue_create();
 	srand(time(NULL));
 	for (index = 1; index <= num_tasks; index++) {
@@ -78,7 +78,7 @@ int main(int argc, char* argv[]) {
 	queue_destroy(queue);
 }
 
-void perform_operations(struct node **list, task new_task) {
+void perform_operations(struct LNode **list, task new_task) {
 	task_op operation = new_task.operation;
 	if (operation == TASK_INSERT) {
 		bool successful = list_insert(list, new_task.data);

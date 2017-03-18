@@ -22,8 +22,8 @@ struct Queue* queue_create();
 struct QNode* node_create(task new_task);
 bool queue_destroy();
 bool queue_enqueue(struct Queue* queue, task new_task);
-struct QNode* queue_dequeue();
-bool queue_isEmpty();
+struct QNode* queue_dequeue(struct Queue* queue);
+bool queue_isEmpty(struct Queue* queue);
 
 
 #endif /* QUEUE_H_ */
