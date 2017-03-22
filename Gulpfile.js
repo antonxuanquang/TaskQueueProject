@@ -5,12 +5,12 @@ var watch = require('gulp-watch')
 gulp.task('compile', shell.task([
   'clear',
   'make clean',
-  'make',
+  'make all',
   'clear',
   // './TaskQueueProject 5 10',
   // 'sleep 1',
   // 'clear',
-  './TaskQueueProject 5 100'
+  './taskQueue 2 10'
 ]))
 
 gulp.task('watch', function() {

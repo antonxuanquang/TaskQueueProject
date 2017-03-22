@@ -18,5 +18,7 @@ typedef struct {
 } task;
 
 char* get_task_name(task_op name);
+void print_task(task a_task);
+void print_result(int thread_id, char *message, task new_task);
 
 #endif /* COMMON_H_ */
