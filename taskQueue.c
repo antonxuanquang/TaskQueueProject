@@ -138,51 +138,46 @@ void *handle_operation_loop(void* data) {
 	while (true) {
 		// printf("%d enter\n", thread_id);
 		if (done) {
-			// printf("%d done !!!!!\n", thread_id);
+			printf("%d done !!!!!\n", thread_id);
 			pthread_exit(0);
 		}
 
 		
+		pthread_mutex_lock(&thread_wait_mutex);
+		waiting_thread++;
+		pthread_mutex_unlock(&thread_wait_mutex);
 
+		printf("%d before cond wait\n", thread_id);
+		pthread_cond_wait(&cond_task, &cond_mutex);
+		printf("%d after cond wait\n", thread_id);
+
+		pthread_mutex_lock(&thread_wait_mutex);
+		waiting_thread--;
+		pthread_mutex_unlock(&thread_wait_mutex);
 
 		
 		
+		// printf("%d before empty\n", thread_id);
 		pthread_mutex_lock(&queue_mutex);
 		isEmpty = queue_isEmpty(queue);
 		pthread_mutex_unlock(&queue_mutex);
+		// printf("%d after empty\n", thread_id);
+
 
 		if (isEmpty) {
-			// printf("%d empty!!!!!\n", thread_id);
-			// pthread_exit(0);
-			
-			// printf("%d before empty\n", thread_id);
-			pthread_mutex_lock(&queue_mutex);
-			isEmpty = queue_isEmpty(queue);
-			pthread_mutex_unlock(&queue_mutex);
-			// printf("%d after empty\n", thread_id);
+			printf("%d empty!!!!!\n", thread_id);
+			pthread_exit(0);
 
-			pthread_mutex_lock(&thread_wait_mutex);
-			waiting_thread++;
-			pthread_mutex_unlock(&thread_wait_mutex);
-
-			printf("%d before cond wait\n", thread_id);
-			pthread_cond_wait(&cond_task, &cond_mutex);
-			printf("%d after cond wait\n", thread_id);
-
-			pthread_mutex_lock(&thread_wait_mutex);
-			waiting_thread--;
-			pthread_mutex_unlock(&thread_wait_mutex);
-		} else {
-			
-			printf("%d lock\n", thread_id);
-			pthread_mutex_lock(&queue_mutex);
-			struct QNode* node = queue_dequeue(queue);
-			pthread_mutex_unlock(&queue_mutex);
-			printf("%d unlock\n", thread_id);
-
-			perform_operations(thread_id, &ll_head, node->operation);
-			free(node);
 		}
+
+		printf("%d lock\n", thread_id);
+		pthread_mutex_lock(&queue_mutex);
+		struct QNode* node = queue_dequeue(queue);
+		pthread_mutex_unlock(&queue_mutex);
+		printf("%d unlock\n", thread_id);
+
+		perform_operations(thread_id, &ll_head, node->operation);
+		free(node);
 	}
 
 	pthread_exit(0);
@@ -205,8 +200,8 @@ int main(int argc, char* argv[]) {
 	queue = queue_create();
 
 	int num_threads = atoi(argv[1]);
-	int thr_id[num_threads];
 	int num_tasks = atoi(argv[2]);
+	int thr_id[num_threads];
 
 	pthread_t  threads[num_threads];   /* thread's structures   */
 	for (index = 0; index < num_threads; index++) {
@@ -216,13 +211,17 @@ int main(int argc, char* argv[]) {
 
 	generate_tasks(num_tasks);
 
-	while (pthread_cond_signal(&cond_task) || waiting_thread > 0) {
-		// printf("%d waiting\n", waiting_thread);
+	while (waiting_thread == num_threads || pthread_cond_signal(&cond_task)) {
+		printf("%d waiting\n", waiting_thread);
 	}
 
 	for (index = 0; index < num_threads; index++) {
 		printf("%d join !!!!\n", index);
 		pthread_join(&threads[index], NULL);
+		while (waiting_thread == 0) {
+			pthread_cond_signal(&cond_task);
+			printf("%d waitingg\n", waiting_thread);
+		}
 	}
 
 	printf("Main: Print final list\n");
