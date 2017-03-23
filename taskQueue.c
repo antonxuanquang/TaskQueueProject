@@ -179,7 +179,6 @@ void *handle_operation_loop(void* data) {
 		perform_operations(thread_id, &ll_head, node->operation);
 		free(node);
 	}
-
 	pthread_exit(0);
 }
 
