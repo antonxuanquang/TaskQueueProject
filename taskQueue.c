@@ -41,6 +41,7 @@
 void perform_operations(int thread_id, struct LNode **list, task new_task);
 void *handle_operation_loop(void* data);
 void generate_tasks(int num_tasks);
+bool get_task_node(struct QNode **task_node);
 
 //*********************************************************
 //
@@ -50,7 +51,7 @@ void generate_tasks(int num_tasks);
 struct LNode *ll_head = NULL;
 struct Queue *queue = NULL;
 const MAX_RANDOM_VALUE = 100;
-int waiting_thread = 0;
+int volatile waiting_thread = 0;
 pthread_mutex_t queue_mutex;
 pthread_mutex_t list_mutex;
 pthread_mutex_t thread_wait_mutex;
@@ -71,9 +72,7 @@ void perform_operations(int thread_id, struct LNode **list, task new_task) {
 			print_result(thread_id, "Can't insert value in linked list", new_task);
 			return;
 		}
-		pthread_mutex_lock(&list_mutex);
 		bool successful = list_insert(list, new_task.data);
-		pthread_mutex_unlock(&list_mutex);
 		if (successful) {
 			print_result(thread_id, "Insert successfully", new_task);
 		} else {
@@ -87,7 +86,6 @@ void perform_operations(int thread_id, struct LNode **list, task new_task) {
 			print_result(thread_id, "Value not found!", new_task);
 		}
 	} else if (operation == TASK_DELETE) {
-		pthread_mutex_lock(&list_mutex);
 		bool successful = list_delete(list, new_task.data);
 		pthread_mutex_unlock(&list_mutex);
 		if (successful) {
@@ -105,11 +103,46 @@ void perform_operations(int thread_id, struct LNode **list, task new_task) {
 
 
 
+bool get_task_node(struct QNode **task_node) {
+
+	while (true) {
+		pthread_mutex_lock(&cond_mutex);
+		waiting_thread++;
+		while (pthread_cond_wait(&cond_task, &cond_mutex) != 0);
+		waiting_thread--;
+		pthread_mutex_unlock(&cond_mutex);
+
+		if (done) return false;
+		if (!queue_isEmpty(queue)) {
+			pthread_mutex_unlock(&queue_mutex);
+			*task_node = queue_dequeue(queue);
+			pthread_mutex_unlock(&queue_mutex);
+			return (task_node != NULL) ? true : false;
+		}
+	}
+	return true;
+}
+
+
+
+void *handle_operation_loop(void* data) {
+	int thread_id = *((int*)data);
+	struct QNode *task_node;
+	
+	while (get_task_node(&task_node)) {
+		pthread_mutex_lock(&list_mutex);
+		perform_operations(thread_id, &ll_head, task_node->operation);
+		pthread_mutex_unlock(&list_mutex);
+		free(task_node);
+	}
+
+	pthread_exit(0);
+}
+
 void generate_tasks(int num_tasks) {
 	int index;
-	bool isEmpty = false;
+	struct QNode* task_node;
 
-	srand(time(NULL));
 	for (index = 1; index <= num_tasks; index++) {
 		task new_task = {index, rand() % NUMBER_OF_OPERATIONS, rand() % MAX_RANDOM_VALUE};
 		printf("Main: Generate task %d: %s %d\n", index, get_task_name(new_task.operation), new_task.data);
@@ -118,69 +151,12 @@ void generate_tasks(int num_tasks) {
 		queue_enqueue(queue, new_task);
 		pthread_mutex_unlock(&queue_mutex);
 
-		pthread_cond_signal(&cond_task);
-	}
-	while (!isEmpty) {
-		pthread_mutex_lock(&queue_mutex);
-		isEmpty = queue_isEmpty(queue);
-		pthread_mutex_unlock(&queue_mutex);
-
-		pthread_cond_signal(&cond_task);
-	}
-	done = true;
-}
-
-void *handle_operation_loop(void* data) {
-	int thread_id = *((int*)data);
-	task new_task;
-	bool isEmpty = false;
-
-	while (true) {
-		// printf("%d enter\n", thread_id);
-		if (done) {
-			printf("%d done !!!!!\n", thread_id);
-			pthread_exit(0);
+		if (waiting_thread > 0) {
+			pthread_cond_signal(&cond_task);
 		}
-
-		
-		pthread_mutex_lock(&thread_wait_mutex);
-		waiting_thread++;
-		pthread_mutex_unlock(&thread_wait_mutex);
-
-		printf("%d before cond wait\n", thread_id);
-		pthread_cond_wait(&cond_task, &cond_mutex);
-		printf("%d after cond wait\n", thread_id);
-
-		pthread_mutex_lock(&thread_wait_mutex);
-		waiting_thread--;
-		pthread_mutex_unlock(&thread_wait_mutex);
-
-		
-		
-		// printf("%d before empty\n", thread_id);
-		pthread_mutex_lock(&queue_mutex);
-		isEmpty = queue_isEmpty(queue);
-		pthread_mutex_unlock(&queue_mutex);
-		// printf("%d after empty\n", thread_id);
-
-
-		if (isEmpty) {
-			printf("%d empty!!!!!\n", thread_id);
-			pthread_exit(0);
-
-		}
-
-		printf("%d lock\n", thread_id);
-		pthread_mutex_lock(&queue_mutex);
-		struct QNode* node = queue_dequeue(queue);
-		pthread_mutex_unlock(&queue_mutex);
-		printf("%d unlock\n", thread_id);
-
-		perform_operations(thread_id, &ll_head, node->operation);
-		free(node);
 	}
 
-	pthread_exit(0);
+	while (pthread_cond_signal(&cond_task) != 0);
 }
 
 int main(int argc, char* argv[]) {
@@ -211,17 +187,13 @@ int main(int argc, char* argv[]) {
 
 	generate_tasks(num_tasks);
 
-	while (waiting_thread == num_threads || pthread_cond_signal(&cond_task)) {
-		printf("%d waiting\n", waiting_thread);
-	}
+	while (!queue_isEmpty(queue) || waiting_thread < num_threads);
+	printf("out\n");
+	done = true;
+	pthread_cond_broadcast(&cond_task);
 
 	for (index = 0; index < num_threads; index++) {
-		printf("%d join !!!!\n", index);
 		pthread_join(&threads[index], NULL);
-		while (waiting_thread == 0) {
-			pthread_cond_signal(&cond_task);
-			printf("%d waitingg\n", waiting_thread);
-		}
 	}
 
 	printf("Main: Print final list\n");
