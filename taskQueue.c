@@ -53,6 +53,7 @@ const MAX_RANDOM_VALUE = 100;
 int waiting_thread = 0;
 pthread_mutex_t queue_mutex;
 pthread_mutex_t list_mutex;
+pthread_mutex_t thread_wait_mutex;
 pthread_mutex_t cond_mutex;
 pthread_cond_t  cond_task;
 bool done = false;
@@ -127,36 +128,64 @@ void generate_tasks(int num_tasks) {
 		pthread_cond_signal(&cond_task);
 	}
 	done = true;
-	// while (waiting_thread > 0) {
-	// 	pthread_cond_broadcast(&cond_task);
-	// }
-	
 }
 
 void *handle_operation_loop(void* data) {
 	int thread_id = *((int*)data);
 	task new_task;
-
-	/* lock the mutex, to assure exclusive access to the list */
+	bool isEmpty = false;
 
 	while (true) {
-		if (done) return;
-		waiting_thread++;
-		pthread_cond_wait(&cond_task, &cond_mutex);
-		waiting_thread--;
-		if (queue_isEmpty(queue)) {
-			return;
-		} else {
+		// printf("%d enter\n", thread_id);
+		if (done) {
+			// printf("%d done !!!!!\n", thread_id);
+			pthread_exit(0);
+		}
+
+		
+
+
+		
+		
+		pthread_mutex_lock(&queue_mutex);
+		isEmpty = queue_isEmpty(queue);
+		pthread_mutex_unlock(&queue_mutex);
+
+		if (isEmpty) {
+			// printf("%d empty!!!!!\n", thread_id);
+			// pthread_exit(0);
+			
+			// printf("%d before empty\n", thread_id);
 			pthread_mutex_lock(&queue_mutex);
-			new_task = queue_dequeue(queue)->operation;
+			isEmpty = queue_isEmpty(queue);
 			pthread_mutex_unlock(&queue_mutex);
+			// printf("%d after empty\n", thread_id);
+
+			pthread_mutex_lock(&thread_wait_mutex);
+			waiting_thread++;
+			pthread_mutex_unlock(&thread_wait_mutex);
+
+			printf("%d before cond wait\n", thread_id);
+			pthread_cond_wait(&cond_task, &cond_mutex);
+			printf("%d after cond wait\n", thread_id);
+
+			pthread_mutex_lock(&thread_wait_mutex);
+			waiting_thread--;
+			pthread_mutex_unlock(&thread_wait_mutex);
+		} else {
 			
-			perform_operations(thread_id, &ll_head, new_task);
-			
+			printf("%d lock\n", thread_id);
+			pthread_mutex_lock(&queue_mutex);
+			struct QNode* node = queue_dequeue(queue);
+			pthread_mutex_unlock(&queue_mutex);
+			printf("%d unlock\n", thread_id);
+
+			perform_operations(thread_id, &ll_head, node->operation);
+			free(node);
 		}
 	}
 
-	return NULL;
+	pthread_exit(0);
 }
 
 int main(int argc, char* argv[]) {
@@ -187,9 +216,17 @@ int main(int argc, char* argv[]) {
 
 	generate_tasks(num_tasks);
 
-	for (index = 0; index < num_threads; index++) {
-		pthread_join(threads[index], NULL);
+	while (pthread_cond_signal(&cond_task) || waiting_thread > 0) {
+		// printf("%d waiting\n", waiting_thread);
 	}
+
+	for (index = 0; index < num_threads; index++) {
+		printf("%d join !!!!\n", index);
+		pthread_join(&threads[index], NULL);
+	}
+
+	printf("Main: Print final list\n");
+	list_print(ll_head);
 
 	list_destroy(ll_head);
 	queue_destroy(queue);
