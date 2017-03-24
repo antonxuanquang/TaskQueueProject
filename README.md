@@ -7,7 +7,7 @@ Compile
 make
 ```
 
-Run: ./taskQueue ```<number of threads> <number of tasks>```
+Run: ./taskQueue number-of-threads number-of-tasks
 ```
 ./taskQueue 3 1000
 ```
