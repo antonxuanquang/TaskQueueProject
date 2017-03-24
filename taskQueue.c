@@ -97,10 +97,6 @@ void perform_operations(int thread_id, struct LNode **list, task new_task) {
 	}
 }
 
-
-
-
-
 void generate_tasks(int num_tasks) {
 	int index;
 	bool isEmpty = false;
@@ -162,7 +158,7 @@ int main(int argc, char* argv[]) {
 
 	int index;
 
-	if (argc != 3 && atoi(argv[1]) <= 0 && atoi(argv[2]) <= 0) {
+	if (argc != 3 || atoi(argv[1]) <= 0 || atoi(argv[2]) <= 0) {
 		printf("usage: %s <number of threads > 0> <number of tasks > 0> \n", argv[0]);
 		return EXIT_FAILURE;
 	}
